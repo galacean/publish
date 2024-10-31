@@ -17,7 +17,7 @@ export async function run(): Promise<void> {
 
     if (needPublish === 'true') {
       const tag = await getPublishTag()
-      core.debug(`publish tag is ${tag}`)
+      core.info(`publish tag is ${tag}`)
       const stdout = await exec(`pnpm publish -r --tag ${tag} --no-git-checks`)
       core.info(stdout)
     }
@@ -26,7 +26,7 @@ export async function run(): Promise<void> {
 
     const cwd = process.cwd()
 
-    if (packages) {
+    if (packages && packages.length) {
       core.debug(`dirs: ${JSON.stringify(packages)}`)
       await Promise.all(
         packages.map(dir => uploadPackageJS(path.join(cwd, dir)))
