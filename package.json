@@ -1,7 +1,7 @@
 {
   "name": "@action/publish",
   "description": "GitHub Actions TypeScript template",
-  "version": "0.1.9",
+  "version": "0.2",
   "packageManager": "pnpm@9.3.0",
   "author": "",
   "private": true,
