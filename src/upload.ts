@@ -34,6 +34,10 @@ async function recursiveDist(
 }
 
 export async function uploadPackageJS(dirPath: string) {
+  const nightly = core.getInput('nightly')
+
+  console.log('Is nightly release', nightly)
+
   const distPath = path.join(dirPath, 'dist')
   if (!fs.existsSync(distPath)) {
     core.info(`${distPath} does not exist, ignore release.`)
@@ -45,13 +49,14 @@ export async function uploadPackageJS(dirPath: string) {
     })
   )
   const version = pkg.version
+  const tagOrVersion = nightly === 'true' ? 'nightly' : version
   core.debug(`upload package: ${pkg.name}`)
   await recursiveDist(distPath, async filepath => {
     core.debug(`start upload: ${filepath}`)
     const res = await upload({
       filename: path.basename(filepath),
       filepath,
-      alias: `${pkg.name}/${version}/${path.relative(distPath, filepath)}`
+      alias: `${pkg.name}/${tagOrVersion}/${path.relative(distPath, filepath)}`
     })
     core.info(`uploaded: ${res.data}`)
   })
