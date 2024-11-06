@@ -21,6 +21,11 @@ inputs:
     required: false
     default: true
 
+  nightly:
+    description: 'need publish nightly or not'
+    required: false
+    default: false
+
 runs:
   using: node20
   main: dist/index.js
