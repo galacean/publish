@@ -29305,6 +29305,29 @@ async function getPublishTag() {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -29312,14 +29335,25 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uploadByPublicKey = uploadByPublicKey;
 const axios_1 = __importDefault(__nccwpck_require__(7269));
 const https_1 = __importDefault(__nccwpck_require__(5692));
+const core = __importStar(__nccwpck_require__(7484));
 // At request level
 const agent = new https_1.default.Agent({
     rejectUnauthorized: false
 });
-function uploadByPublicKey(form) {
-    return axios_1.default.post(process.env['OASISBE_UPLOAD_URL'], form, {
+function uploadByPublicKey(form, filepath) {
+    return axios_1.default
+        .post(process.env['OASISBE_UPLOAD_URL'], form, {
         httpsAgent: agent,
         headers: JSON.parse(process.env['OASISBE_REQUEST_HEADER'])
+    })
+        .then(res => {
+        return res.status === 200 ? res : Promise.reject(res);
+    })
+        .catch(err => {
+        core.debug(`Upload failed. filename is ${form.get('filename')}, alias is ${form.get('alias')}, filepath is ${filepath}`);
+        core.debug(err);
+        core.error(err);
+        core.setFailed(err);
     });
 }
 
@@ -29391,7 +29425,7 @@ async function recursiveDist(distPath, callback) {
 }
 async function uploadPackageJS(dirPath) {
     const nightly = core.getInput('nightly');
-    console.log('Is nightly release', nightly);
+    core.debug(`Is nightly release: ${nightly}`);
     const distPath = path_1.default.join(dirPath, 'dist');
     if (!fs_1.default.existsSync(distPath)) {
         core.info(`${distPath} does not exist, ignore release.`);
@@ -29417,12 +29451,12 @@ async function upload({ filename, alias, filepath }) {
     const form = new FormData();
     const message = 'upload';
     const signature = crypto_1.default.publicEncrypt(publicKey, Buffer.from(message));
-    const file = await (0, file_from_path_1.fileFromPath)(filepath, 'index.txt');
+    const file = await (0, file_from_path_1.fileFromPath)(filepath);
     form.append('signature', signature.toString('base64'));
     form.append('filename', filename);
     form.append('alias', alias);
     form.append('file', file);
-    const result = await (0, request_1.uploadByPublicKey)(form);
+    const result = (await (0, request_1.uploadByPublicKey)(form, filepath));
     return result.data;
 }
 

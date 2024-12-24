@@ -81,6 +81,8 @@ export async function upload({
   form.append('alias', alias)
   form.append('file', file)
 
-  const result = await uploadByPublicKey(form, filepath) as AxiosResponse<{ data: string }>
-  return result.data;
+  const result = (await uploadByPublicKey(form, filepath)) as AxiosResponse<{
+    data: string
+  }>
+  return result.data
 }
