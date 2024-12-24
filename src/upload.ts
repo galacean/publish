@@ -2,6 +2,7 @@ import path from 'path'
 import { fileFromPath } from 'formdata-node/file-from-path'
 import { uploadByPublicKey } from './request'
 import crypto from 'crypto'
+import { AxiosResponse } from 'axios'
 import fs from 'fs'
 import * as core from '@actions/core'
 
@@ -36,7 +37,7 @@ async function recursiveDist(
 export async function uploadPackageJS(dirPath: string) {
   const nightly = core.getInput('nightly')
 
-  console.log('Is nightly release', nightly)
+  core.debug(`Is nightly release: ${nightly}`)
 
   const distPath = path.join(dirPath, 'dist')
   if (!fs.existsSync(distPath)) {
@@ -74,12 +75,12 @@ export async function upload({
   const form = new FormData()
   const message = 'upload'
   const signature = crypto.publicEncrypt(publicKey, Buffer.from(message))
-  const file = await fileFromPath(filepath, 'index.txt')
+  const file = await fileFromPath(filepath)
   form.append('signature', signature.toString('base64'))
   form.append('filename', filename)
   form.append('alias', alias)
   form.append('file', file)
 
-  const result = await uploadByPublicKey(form)
-  return result.data
+  const result = await uploadByPublicKey(form, filepath) as AxiosResponse<{ data: string }>
+  return result.data;
 }
