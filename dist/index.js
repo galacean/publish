@@ -29439,13 +29439,34 @@ async function uploadPackageJS(dirPath) {
     core.debug(`upload package: ${pkg.name}`);
     await recursiveDist(distPath, async (filepath) => {
         core.debug(`start upload: ${filepath}`);
-        const res = await upload({
-            filename: path_1.default.basename(filepath),
-            filepath,
-            alias: `${pkg.name}/${tagOrVersion}/${path_1.default.relative(distPath, filepath)}`
-        });
-        core.info(`uploaded: ${res.data}`);
+        try {
+            const res = await retry(() => upload({
+                filename: path_1.default.basename(filepath),
+                filepath,
+                alias: `${pkg.name}/${tagOrVersion}/${path_1.default.relative(distPath, filepath)}`
+            }), 5, 1000); // 5 retries with 1 second delay
+            core.info(`uploaded: ${res.data}`);
+        }
+        catch (error) {
+            core.error(`Failed to upload ${filepath}: ${error.message}`);
+        }
     });
+}
+async function retry(fn, maxRetries, delay) {
+    let attempts = 0;
+    while (attempts < maxRetries) {
+        try {
+            return await fn();
+        }
+        catch (error) {
+            attempts++;
+            if (attempts >= maxRetries) {
+                throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    throw new Error('Max retries exceeded');
 }
 async function upload({ filename, alias, filepath }) {
     const form = new FormData();
