@@ -53,14 +53,34 @@ export async function uploadPackageJS(dirPath: string) {
   const tagOrVersion = nightly === 'true' ? 'nightly' : version
   core.debug(`upload package: ${pkg.name}`)
   await recursiveDist(distPath, async filepath => {
-    core.debug(`start upload: ${filepath}`)
-    const res = await upload({
-      filename: path.basename(filepath),
-      filepath,
-      alias: `${pkg.name}/${tagOrVersion}/${path.relative(distPath, filepath)}`
-    })
-    core.info(`uploaded: ${res.data}`)
-  })
+    core.debug(`start upload: ${filepath}`);
+    try {
+      const res = await retry(() => upload({
+        filename: path.basename(filepath),
+        filepath,
+        alias: `${pkg.name}/${tagOrVersion}/${path.relative(distPath, filepath)}`
+      }), 5, 1000); // 5 retries with 1 second delay
+      core.info(`uploaded: ${res.data}`);
+    } catch (error) {
+      core.error(`Failed to upload ${filepath}: ${error.message}`);
+    }
+  });
+}
+
+async function retry<T>(fn: () => Promise<T>, maxRetries: number, delay: number): Promise<T> {
+  let attempts = 0;
+  while (attempts < maxRetries) {
+    try {
+      return await fn();
+    } catch (error) {
+      attempts++;
+      if (attempts >= maxRetries) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Max retries exceeded');
 }
 
 export async function upload({
