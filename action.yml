@@ -21,10 +21,9 @@ inputs:
     required: false
     default: true
 
-  nightly:
-    description: 'need publish nightly or not'
+  sepcific_tag:
+    description: 'set the tag to publish'
     required: false
-    default: false
 
 runs:
   using: node20
