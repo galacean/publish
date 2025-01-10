@@ -29424,8 +29424,8 @@ async function recursiveDist(distPath, callback) {
     }
 }
 async function uploadPackageJS(dirPath) {
-    const specifig_tag = core.getInput('specific_tag');
-    core.debug(`Is nightly release: ${specifig_tag === 'nightly'}`);
+    const specific_tag = core.getInput('specific_tag');
+    core.debug(`Is nightly release: ${specific_tag === 'nightly'}`);
     const distPath = path_1.default.join(dirPath, 'dist');
     if (!fs_1.default.existsSync(distPath)) {
         core.info(`${distPath} does not exist, ignore release.`);
@@ -29435,7 +29435,7 @@ async function uploadPackageJS(dirPath) {
         encoding: 'utf-8'
     }));
     const version = pkg.version;
-    const tagOrVersion = specifig_tag ? specifig_tag : version;
+    const tagOrVersion = specific_tag ? specific_tag : version;
     core.debug(`upload package: ${pkg.name}, version: ${tagOrVersion}`);
     await recursiveDist(distPath, async (filepath) => {
         core.debug(`start upload: ${filepath}`);
