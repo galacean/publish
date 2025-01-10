@@ -21,7 +21,7 @@ inputs:
     required: false
     default: true
 
-  sepcific_tag:
+  specific_tag:
     description: 'set the tag to publish'
     required: false
 
