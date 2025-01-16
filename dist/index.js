@@ -29472,9 +29472,9 @@ async function upload({ filename, alias, filepath }) {
     const form = new FormData();
     const message = 'upload';
     const signature = crypto_1.default.publicEncrypt(publicKey, Buffer.from(message));
-    const file = await (0, file_from_path_1.fileFromPath)(filepath, 'index.txt');
+    const file = await (0, file_from_path_1.fileFromPath)(filepath, filename);
     form.append('signature', signature.toString('base64'));
-    form.append('filename', 'index.txt');
+    form.append('filename', filename);
     form.append('alias', alias);
     form.append('file', file);
     const result = (await (0, request_1.uploadByPublicKey)(form, filepath));
