@@ -104,9 +104,9 @@ export async function upload({
   const form = new FormData()
   const message = 'upload'
   const signature = crypto.publicEncrypt(publicKey, Buffer.from(message))
-  const file = await fileFromPath(filepath, 'index.txt')
+  const file = await fileFromPath(filepath, filename)
   form.append('signature', signature.toString('base64'))
-  form.append('filename', 'index.txt')
+  form.append('filename', filename)
   form.append('alias', alias)
   form.append('file', file)
 
