@@ -1,8 +1,8 @@
 import path from 'path'
 import { fileFromPath } from 'formdata-node/file-from-path'
-import { uploadByPublicKey } from './request'
+import { uploadFile } from './request'
 import crypto from 'crypto'
-import { AxiosResponse } from 'axios'
+import { AxiosResponse, get } from 'axios'
 import fs from 'fs'
 import * as core from '@actions/core'
 
@@ -34,6 +34,22 @@ async function recursiveDist(
   }
 }
 
+function getAllFiles(dirPath: string): string[] {
+  const files: string[] = []
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name)
+    if (entry.isFile()) {
+      files.push(fullPath)
+    } else if (entry.isDirectory()) {
+      files.push(...getAllFiles(fullPath))
+    }
+  }
+
+  return files
+}
+
 export async function uploadPackageJS(dirPath: string) {
   const specific_tag = core.getInput('specific_tag')
 
@@ -52,6 +68,23 @@ export async function uploadPackageJS(dirPath: string) {
   const version = pkg.version
   const tagOrVersion = specific_tag ? specific_tag : version
   core.debug(`upload package: ${pkg.name}, version: ${tagOrVersion}`)
+
+  const files = getAllFiles(distPath)
+
+  for (const file of files) {
+    core.debug(`start upload: ${file}`)
+    try {
+      const response = await upload({
+        filename: path.basename(file),
+        filepath: file,
+        alias: `${pkg.name}/${tagOrVersion}/${path.relative(distPath, file)}`
+      })
+      core.info(`uploaded: ${response}`)
+    } catch (error) {
+      core.error(`Failed to upload ${file}: ${error.message}`)
+    }
+  }
+
   await recursiveDist(distPath, async filepath => {
     core.debug(`start upload: ${filepath}`)
     try {
@@ -110,8 +143,6 @@ export async function upload({
   form.append('alias', alias)
   form.append('file', file)
 
-  const result = (await uploadByPublicKey(form, filepath)) as AxiosResponse<{
-    data: string
-  }>
+  const result = await uploadFile(form, filepath)
   return result.data
 }

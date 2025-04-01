@@ -1,27 +1,35 @@
-import axios from 'axios'
 import https from 'https'
 import * as core from '@actions/core'
 
-// At request level
-const agent = new https.Agent({
-  rejectUnauthorized: false
-})
+export async function uploadFile(
+  formData: FormData,
+  filepath: string,
+  retries: number = 3
+) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(process.env['OASISBE_UPLOAD_URL'], {
+        method: 'POST',
+        body: formData,
+        headers: JSON.parse(process.env['OASISBE_REQUEST_HEADER'])
+      })
 
-export function uploadByPublicKey(form: FormData, filepath: string) {
-  return axios
-    .post(process.env['OASISBE_UPLOAD_URL'], form, {
-      httpsAgent: agent,
-      headers: JSON.parse(process.env['OASISBE_REQUEST_HEADER'])
-    })
-    .then(res => {
-      return res.status === 200 ? res : Promise.reject(res)
-    })
-    .catch(err => {
+      if (!response.ok) {
+        throw new Error(`Failed to upload ${filepath}: ${response.statusText}`)
+      }
+
+      return response.json()
+    } catch (error) {
       core.debug(
-        `Upload failed. filename is ${form.get('filename')}, alias is ${form.get('alias')}, filepath is ${filepath}`
+        `Attempt ${attempt} failed: ${error.message}, retrying... ${attempt}`
       )
-      core.debug(err)
-      core.error(err)
-      core.setFailed(err)
-    })
+      if (attempt === retries) {
+        core.error(`Attempt ${attempt} failed: ${error.message}`)
+        core.debug(error)
+        core.setFailed(error)
+        throw new Error('Max retry attempts reached')
+      }
+    }
+  }
+  throw new Error(`Unexpected error occurred while uploading: ${filepath}`)
 }
