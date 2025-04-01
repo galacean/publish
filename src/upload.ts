@@ -84,25 +84,6 @@ export async function uploadPackageJS(dirPath: string) {
       core.error(`Failed to upload ${file}: ${error.message}`)
     }
   }
-
-  await recursiveDist(distPath, async filepath => {
-    core.debug(`start upload: ${filepath}`)
-    try {
-      const res = await retry(
-        () =>
-          upload({
-            filename: path.basename(filepath),
-            filepath,
-            alias: `${pkg.name}/${tagOrVersion}/${path.relative(distPath, filepath)}`
-          }),
-        5,
-        1000
-      ) // 5 retries with 1 second delay
-      core.info(`uploaded: ${res.data}`)
-    } catch (error) {
-      core.error(`Failed to upload ${filepath}: ${error.message}`)
-    }
-  })
 }
 
 async function retry<T>(
