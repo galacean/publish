@@ -18,11 +18,11 @@ export async function uploadFile(
         throw new Error(`Failed to upload ${filepath}: ${response.statusText}`)
       }
 
-      const json = await response.json();
+      const json = await response.json()
 
       core.debug(`Upload response: ${JSON.stringify(json)}`)
 
-      return json;
+      return json
     } catch (error) {
       core.debug(
         `Attempt ${attempt} failed: ${error.message}, retrying... ${attempt}`

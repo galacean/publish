@@ -25827,7 +25827,9 @@ async function uploadFile(formData, filepath, retries = 3) {
             if (!response.ok) {
                 throw new Error(`Failed to upload ${filepath}: ${response.statusText}`);
             }
-            return response.json();
+            const json = await response.json();
+            core.debug(`Upload response: ${JSON.stringify(json)}`);
+            return json;
         }
         catch (error) {
             core.debug(`Attempt ${attempt} failed: ${error.message}, retrying... ${attempt}`);
@@ -25951,20 +25953,6 @@ async function uploadPackageJS(dirPath) {
             core.error(`Failed to upload ${file}: ${error.message}`);
         }
     }
-    await recursiveDist(distPath, async (filepath) => {
-        core.debug(`start upload: ${filepath}`);
-        try {
-            const res = await retry(() => upload({
-                filename: path_1.default.basename(filepath),
-                filepath,
-                alias: `${pkg.name}/${tagOrVersion}/${path_1.default.relative(distPath, filepath)}`
-            }), 5, 1000); // 5 retries with 1 second delay
-            core.info(`uploaded: ${res.data}`);
-        }
-        catch (error) {
-            core.error(`Failed to upload ${filepath}: ${error.message}`);
-        }
-    });
 }
 async function retry(fn, maxRetries, delay) {
     let attempts = 0;
