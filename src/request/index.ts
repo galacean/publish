@@ -8,10 +8,18 @@ export async function uploadFile(
 ) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      // fetch 在 body 为 FormData 时会自动生成带 boundary 的 Content-Type。
+      // 若 OASISBE_REQUEST_HEADER 里带了无 boundary 的 Content-Type（如 multipart/form-data），
+      // 在 Node 24（新 undici）下会覆盖掉自动生成的 boundary，导致后端 multipart 解析不到文件。
+      // 因此这里主动剥掉 Content-Type，交由 fetch 自动设置。
+      const headers = JSON.parse(process.env['OASISBE_REQUEST_HEADER'] || '{}')
+      delete headers['Content-Type']
+      delete headers['content-type']
+
       const response = await fetch(process.env['OASISBE_UPLOAD_URL'], {
         method: 'POST',
         body: formData,
-        headers: JSON.parse(process.env['OASISBE_REQUEST_HEADER'])
+        headers,
       })
 
       if (!response.ok) {
