@@ -1,5 +1,4 @@
 import path from 'path'
-import { fileFromPath } from 'formdata-node/file-from-path'
 import { uploadFile } from './request'
 import crypto from 'crypto'
 import { AxiosResponse, get } from 'axios'
@@ -118,11 +117,15 @@ export async function upload({
   const form = new FormData()
   const message = 'upload'
   const signature = crypto.publicEncrypt(publicKey, Buffer.from(message))
-  const file = await fileFromPath(filepath, 'index.txt')
+  // 使用原生 Blob 而非 formdata-node 的 fileFromPath：
+  // Node 24(新 undici) 的 FormData.append 会把非原生 Blob(如 formdata-node 的 File)
+  // 当作普通值 stringify 成 "[object File]"，导致后端收不到文件 part，报 "Can't found upload file"。
+  // 原生 Blob 在 Node 20/22/24 下都能被正确识别为文件。
+  const file = new Blob([fs.readFileSync(filepath)])
   form.append('signature', signature.toString('base64'))
   form.append('filename', filename)
   form.append('alias', alias)
-  form.append('file', file)
+  form.append('file', file, 'index.txt')
 
   const result = await uploadFile(form, filepath)
   return result.data
