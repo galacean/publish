@@ -71,6 +71,11 @@ export async function uploadPackageJS(dirPath: string) {
   const files = getAllFiles(distPath)
 
   for (const file of files) {
+    // 跳过 sourcemap 文件，不上传到 CDN
+    if (path.extname(file) === '.map') {
+      core.debug(`skip sourcemap: ${file}`)
+      continue
+    }
     core.debug(`start upload: ${file}`)
     try {
       const response = await upload({
